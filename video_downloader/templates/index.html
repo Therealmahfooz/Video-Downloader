@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Downloader</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: radial-gradient(circle at top, #0d1117, #000);
+      color: #e6e6e6;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 480px;
+      background: #0d1b2a;
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 0 20px rgba(0, 128, 255, 0.3);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #58a6ff;
+      letter-spacing: 1px;
+    }
+
+    label {
+      font-size: 0.9rem;
+      color: #a8b3cf;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0 15px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+      background: #161b22;
+      color: #e6e6e6;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 6px rgba(0, 123, 255, 0.5);
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .message {
+      margin-top: 15px;
+      text-align: center;
+      color: #ff5555;
+      font-size: 0.95rem;
+    }
+
+    /* Loading spinner */
+    .loader {
+      border: 4px solid #161b22;
+      border-top: 4px solid #58a6ff;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      animation: spin 1s linear infinite;
+      margin: 15px auto;
+      display: none;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .success {
+      color: #4ade80;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎥 Video Downloader</h1>
+    <form id="downloadForm">
+      <label for="url">Video URL:</label>
+      <input type="url" id="url" name="url" placeholder="Enter video URL" required>
+
+      <label for="filename">File name (optional):</label>
+      <input type="text" id="filename" name="filename" placeholder="Custom file name">
+
+      <label for="quality">Quality:</label>
+      <select id="quality" name="quality">
+        <option value="best">Best</option>
+        <option value="2160">2160p (4K)</option>
+        <option value="1440">1440p</option>
+        <option value="1080">1080p</option>
+        <option value="720">720p</option>
+        <option value="480">480p</option>
+      </select>
+
+      <button type="submit">Download</button>
+    </form>
+    <div class="loader" id="loader"></div>
+    <div class="message" id="message"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('downloadForm');
+    const message = document.getElementById('message');
+    const loader = document.getElementById('loader');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      message.textContent = '';
+      loader.style.display = 'block';
+
+      const formData = new FormData(form);
+      try {
+        const res = await fetch('/download', {
+          method: 'POST',
+          body: formData
+        });
+
+        loader.style.display = 'none';
+
+        if (!res.ok) {
+          const data = await res.json();
+          message.textContent = data.error || 'Download failed.';
+          return;
+        }
+
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const filename = formData.get('filename') || 'video.mp4';
+        a.href = url;
+        a.download = filename.endsWith('.mp4') ? filename : filename + '.mp4';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+
+        message.textContent = '✅ Download started!';
+        message.classList.add('success');
+      } catch (err) {
+        loader.style.display = 'none';
+        message.textContent = 'Error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
